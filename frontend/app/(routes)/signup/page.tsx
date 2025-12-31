@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,13 +13,28 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      // Auto-login after successful registration
+      const loginResponse = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -26,13 +42,13 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || "Login failed");
       }
 
-      login(data.token);
+      login(loginData.token);
       router.push("/landing");
     } catch (err: any) {
       setError(err.message);
@@ -44,11 +60,11 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <form
-        onSubmit={handleLogin}
+        onSubmit={handleSignup}
         className="w-full max-w-md border rounded-lg p-6"
       >
         <h1 className="text-2xl font-bold text-center mb-4">
-          Login to CampusOR
+          Sign up for CampusOR
         </h1>
 
         {error && (
@@ -56,6 +72,15 @@ export default function LoginPage() {
             {error}
           </div>
         )}
+
+        <input
+          type="text"
+          placeholder="Full Name"
+          className="w-full border px-3 py-2 rounded mb-3"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
 
         <input
           type="email"
@@ -80,13 +105,13 @@ export default function LoginPage() {
           className="w-full bg-black text-white py-2 rounded disabled:opacity-50 cursor-pointer hover:bg-gray-800 transition-colors"
           disabled={isLoading}
         >
-          {isLoading ? "Logging in..." : "Login"}
+          {isLoading ? "Creating Account..." : "Sign Up"}
         </button>
 
         <p className="text-center mt-4 text-sm text-gray-600">
-          Don't have an account?{" "}
-          <a href="/signup" className="text-blue-600 hover:underline cursor-pointer">
-            Sign up
+          Already have an account?{" "}
+          <a href="/login" className="text-blue-600 hover:underline cursor-pointer">
+            Login
           </a>
         </p>
       </form>

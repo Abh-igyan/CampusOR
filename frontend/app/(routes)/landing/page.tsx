@@ -1,23 +1,45 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LandingPage() {
+  const { isAuthenticated, logout } = useAuth();
+
   return (
     <main className="min-h-screen flex flex-col">
       {/* Navbar */}
       <nav className="flex justify-between items-center px-6 py-4 border-b">
         <h1 className="text-xl font-bold">CampusOR</h1>
         <div className="space-x-4">
-          <Link href="/login" className="text-sm font-medium">
-            Login
-          </Link>
-          <Link
-            href="/login"
-            className="bg-black text-white px-4 py-2 rounded-md text-sm"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={logout}
+                className="text-sm font-medium text-red-600 hover:text-red-700 cursor-pointer"
+              >
+                Logout
+              </button>
+              <Link
+                href="/dashboard"
+                className="bg-black text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-gray-800 transition-colors"
+              >
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm font-medium cursor-pointer hover:text-gray-600">
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-black text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-gray-800 transition-colors"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -33,15 +55,26 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-6 flex gap-4">
-          <Link
-            href="/login"
-            className="bg-black text-white px-6 py-3 rounded-md"
-          >
-            Join Queue
-          </Link>
-          <button className="border px-6 py-3 rounded-md">
-            Learn More
-          </button>
+          {isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              className="bg-black text-white px-6 py-3 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/signup"
+                className="bg-black text-white px-6 py-3 rounded-md cursor-pointer hover:bg-gray-800 transition-colors"
+              >
+                Join Queue
+              </Link>
+              <button className="border px-6 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                Learn More
+              </button>
+            </>
+          )}
         </div>
       </section>
     </main>

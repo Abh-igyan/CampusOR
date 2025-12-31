@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (jwt: string) => void;
   logout: () => void;
 };
@@ -13,12 +14,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("campusor_jwt");
     if (storedToken) {
       setToken(storedToken);
     }
+    setIsLoading(false);
   }, []);
 
   const login = (jwt: string) => {
@@ -36,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         token,
         isAuthenticated: !!token,
+        isLoading,
         login,
         logout,
       }}

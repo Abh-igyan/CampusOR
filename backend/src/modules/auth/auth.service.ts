@@ -33,10 +33,8 @@ export const registerUser = async (
 ): Promise<SafeUser> => {
   const { name, email, password, role, collegeEmail, department, position } = input;
   
-  // Determine final role (default to "user")
   const finalRole = role || "user";
 
-  // Validate role-specific required fields
   if (finalRole === "user") {
     if (!collegeEmail) {
       throw new Error("College email is required for user role");
@@ -50,17 +48,15 @@ export const registerUser = async (
     }
   }
 
-  // 1)check if email already exists
+  // if email already exists
   const existing = await User.findOne({ email });
   if (existing) {
-    // for now we just throw a normal Error, controller will map it to 400
     throw new Error("Email is already registered");
   }
 
-  // 2 : Hash password
+  // hash password
   const hashedPassword = await bcrypt.hash(password, SALT);
 
-  // 3) Prepare user data with role-specific fields
   const userData: {
     name: string;
     email: string;
@@ -76,7 +72,6 @@ export const registerUser = async (
     role: finalRole,
   };
 
-  // Add role-specific fields conditionally
   if (finalRole === "user" && collegeEmail) {
     userData.collegeEmail = collegeEmail;
   } else if (finalRole === "operator") {
@@ -84,12 +79,10 @@ export const registerUser = async (
     if (position) userData.position = position;
   }
 
-  // 4) Create user in DB
+  // create user in DB
   const userResult = await User.create(userData);
-  // Mongoose create can return array or single doc, ensure we have single doc
   const user = Array.isArray(userResult) ? userResult[0] : userResult;
 
-  // 5) safe data (no password)
   return {
     id: user._id.toString(),
     name: user.name,
@@ -156,4 +149,56 @@ export const loginUser = async (input: LoginDetails): Promise<LoginResult> => {
   const token = jwt.sign(payload, env.JWT_SECRET, signOptions);
 
   return { token, user: safeUser };
+};
+
+///-------------------------CREATE ADMIN USER SERVICE---------------------------------------------
+
+export interface CreateAdminDetails {
+  name: string;
+  email: string;
+  password: string;
+  collegeEmail: string;
+}
+
+export const createAdminUser = async (
+  input: CreateAdminDetails
+): Promise<SafeUser> => {
+  const { name, email, password, collegeEmail } = input;
+
+  if (!collegeEmail) {
+    throw new Error("CollegeEmail is required for admin role");
+  }
+
+  // Check if email already exists
+  const existing = await User.findOne({ $or: [{ email }, { collegeEmail }] });
+  if (existing) {
+    throw new Error("Email or college email is already registered");
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, SALT);
+
+  // Create admin user in DB
+  const userData = {
+    name,
+    email,
+    password: hashedPassword,
+    role: "admin" as UserRole,
+    collegeEmail,
+  };
+
+  const userResult = await User.create(userData);
+  const user = Array.isArray(userResult) ? userResult[0] : userResult;
+
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    collegeEmail: user.collegeEmail,
+    department: user.department,
+    position: user.position,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 };

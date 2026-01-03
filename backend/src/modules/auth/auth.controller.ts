@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { registerUser, loginUser } from "./auth.service.js";
+import { registerUser, loginUser, createAdminUser } from "./auth.service.js";
+import { AuthRequest } from "../../middlewares/auth.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -69,6 +70,31 @@ export const login = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(400).json({
       message: error.message || "Login failed",
+    });
+  }
+};
+
+export const createAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, email, password, collegeEmail } = req.body;
+
+    // Basic validation
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "name, email and password are required",
+      });
+    }
+
+    // Create admin user (only accessible by existing admin users via middleware)
+    const user = await createAdminUser({ name, email, password, collegeEmail });
+
+    return res.status(201).json({
+      message: "Admin user created successfully",
+      user,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message || "Admin creation failed",
     });
   }
 };
